@@ -1,0 +1,111 @@
+
+<!doctype html>
+<html><head><meta charset='utf-8'><title>HUD</title>
+<link href='https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap' rel='stylesheet'>
+<style>
+:root{--c:#00e0ff;--c2:#0088ff}
+*{box-sizing:border-box}body{{margin:0;background:#000018;color:var(--c);font-family:'Orbitron',sans-serif}}
+section{{padding:4px;border-top:1px solid var(--c2)}}
+button,input,select{{background:#002033;color:var(--c);border:1px solid var(--c2);padding:4px 6px;font-family:inherit}}
+button:hover{{background:#003850}}
+#orb{{height:40vh}}
+#chatZone{{height:25vh;display:flex;flex-direction:column}}
+#log{{flex:1;overflow-y:auto;border:1px solid var(--c2);padding:4px;font-size:13px}}
+#grid{{height:35vh;overflow:auto;border:1px solid var(--c2)}}
+.table th,.table td{{padding:2px 6px;border:1px solid var(--c2)}}
+
+.scene{width:100%;height:100%;display:flex;justify-content:center;align-items:center;perspective:1200px}
+.wrapper{width:50vmin;height:50vmin;transform-style:preserve-3d;transform:rotateX(-8deg)}
+.globe{width:100%;height:100%;position:relative;transform-style:preserve-3d;animation:spin 25s linear infinite}
+.ring{position:absolute;width:100%;height:100%;border:2px dotted var(--c);border-radius:50%;opacity:0;animation:fade .8s ease forwards}
+@keyframes spin{to{transform:rotateY(-360deg)}}
+@keyframes fade{to{opacity:1}}
+
+</style>
+</head>
+<body>
+<section id=login>
+  <h3>SECURE LOGIN</h3>
+  <input id=u placeholder=user>
+  <input id=p placeholder=pass type=password>
+  <button onclick="L()">Enter</button><span id=err></span>
+</section>
+
+<section id=orb hidden>
+  <div class="scene"><div class="wrapper"><div class="globe">
+    <span class='ring' style='animation-delay:0ms'></span>
+<span class='ring' style='animation-delay:120ms'></span>
+<span class='ring' style='animation-delay:240ms'></span>
+<span class='ring' style='animation-delay:360ms'></span>
+<span class='ring' style='animation-delay:480ms'></span>
+<span class='ring' style='animation-delay:600ms'></span>
+<span class='ring' style='animation-delay:720ms'></span>
+  </div></div></div>
+</section>
+
+<section id=chatZone hidden>
+  <div id=log></div>
+  <div><input id=q style="width:80%">
+       <button onclick=send()>Send</button>
+  </div>
+</section>
+
+<section id=dataSec hidden>
+  <select id=tables onchange=load()></select>
+  <button onclick=load()>Refresh</button>
+  <div id=grid></div>
+</section>
+
+<script>
+const ADMIN='admin',PASS='admin123';
+function L(){if(u.value===ADMIN&&p.value===PASS){login.remove();orb.hidden=chatZone.hidden=dataSec.hidden=false;init();}else err.textContent='❌';}
+
+async function init(){
+  tables.innerHTML=(await eel.api_tables()()).map(t=>`<option>${t}</option>`).join('');
+  load(); drawPoints();
+}
+
+async function load(){
+  const t=tables.value;
+  const rows=await eel.api_rows(t)();
+  if(!rows.length){grid.textContent='(empty)';return;}
+  const keys=Object.keys(rows[0]);
+  let h='<table class="table"><tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+  rows.forEach(r=>{
+    h+='<tr>'+keys.map(c=>`<td contenteditable onblur="eel.api_update('${t}',${r.ID},'${c}',this.textContent)">${r[c]??''}</td>`).join('')+'</tr>';
+  });
+  grid.innerHTML=h;
+}
+
+async function send(){
+  const txt=q.value.trim();
+  if(!txt) return;
+  addLine('> '+txt);
+  q.value='';
+  const wait=addLine('<i>assistant…</i>',true);
+  const ans=await eel.ai_chat(txt)();
+  wait.remove(); addLine(ans);
+}
+
+function addLine(html,ret=false){
+  const d=document.createElement('div'); d.innerHTML=html; log.appendChild(d); log.scrollTop=log.scrollHeight; return d;
+}
+
+async function drawPoints(){
+  const data=await eel.api_globe()();
+  const container=document.querySelector('.globe');
+  data.objects.forEach(o=>{
+    const pt=document.createElement('span');
+    pt.className='ring'; // reuse CSS
+    const lat=o.Lat* Math.PI/180, lng=o.Lng*Math.PI/180;
+    const r=50; // %
+    const x=r*Math.cos(lat)*Math.sin(lng);
+    const y=r*Math.sin(lat);
+    const z=r*Math.cos(lat)*Math.cos(lng);
+    pt.style.transform=`translate3d(${x}%,${y}%,${z}px) scale(.05)`;
+    container.appendChild(pt);
+  });
+}
+
+</script>
+</body></html>
