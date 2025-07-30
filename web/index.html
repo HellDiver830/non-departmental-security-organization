@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Вневедомственная охранная служба</title>
+  <!-- Подключение шрифта Orbitron для футуристического стиля -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <!-- Подключение стилей Tippy.js (CSS для тултипов) -->
+  <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+  <style>
+    /* Общие стили страницы */
+    body {
+      margin: 0;
+      background: #000;
+      color: #0ff;
+      font-family: 'Orbitron', sans-serif;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      margin: 0.2em;
+      text-shadow: 0 0 8px #0ff; /* неоновое свечение текста */
+    }
+    /* Контейнер, делящий окно на секции */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    /* Верхняя секция - глобус */
+    #globe-section {
+      flex: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    #globeViz {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+    }
+    /* Центральная секция - чат */
+    #chat-section {
+      flex: 1 1 25%;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+    #chatLog {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #0ff;
+      background: rgba(0, 255, 255, 0.05);
+    }
+    /* Оформление сообщений в чате */
+    #chatLog .user {
+      color: #ff0;
+      text-align: right;
+      margin: 4px 0;
+    }
+    #chatLog .assistant {
+      color: #0f0;
+      text-align: left;
+      margin: 4px 0;
+    }
+    #chatInputArea {
+      display: flex;
+    }
+    #userInput {
+      flex: 1 1 auto;
+      padding: 6px;
+      font-size: 1em;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid #0ff;
+      color: #0ff;
+    }
+    #userInput::placeholder {
+      color: #0ff;
+      opacity: 0.5;
+    }
+    #sendBtn, #voiceBtn {
+      padding: 6px 12px;
+      margin-left: 5px;
+      font: inherit;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid #0ff;
+      color: #0ff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #sendBtn:hover, #voiceBtn:hover {
+      background: rgba(0, 255, 255, 0.3);
+    }
+    /* Нижняя секция - таблицы */
+    #table-section {
+      flex: 1 1 40%;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #table-section h2 {
+      font-size: 1.2em;
+      margin: 8px 0 4px;
+      text-shadow: 0 0 5px #0ff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      color: #0ff;
+    }
+    th, td {
+      border: 1px solid #0ff;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: rgba(0, 255, 255, 0.2);
+    }
+    td {
+      background: rgba(255, 255, 255, 0.1);
+      outline: none; /* убрать выделение при фокусе по умолчанию */
+    }
+    td:focus {
+      /* Подсветка активной ячейки при редактировании */
+      outline: 2px solid #0ff;
+      box-shadow: 0 0 8px #0ff;
+    }
+    /* Настройка темы всплывающих подсказок Tippy (используем 'light', но делаем её тёмной) */
+    .tippy-box[data-theme~='light'] {
+      background-color: #222;
+      color: #0ff;
+      border: 1px solid #0ff;
+      box-shadow: 0 0 8px #0ff;
+    }
+    .tippy-box[data-theme~='light'] .tippy-arrow {
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>Вневедомственная охранная служба.</h1>
+  <div class="container">
+    <!-- Глобус с метками -->
+    <div id="globe-section">
+      <div id="globeViz"></div>
+    </div>
+    <!-- Чат-ассистент Gemini -->
+    <div id="chat-section">
+      <div id="chatLog"></div>
+      <div id="chatInputArea">
+        <input type="text" id="userInput" placeholder="Введите команду..." />
+        <button id="sendBtn">Отправить</button>
+        <button id="voiceBtn" title="Голосовой ввод">🎤</button>
+      </div>
+    </div>
+    <!-- Таблицы данных -->
+    <div id="table-section">
+      <h2>Сотрудники</h2>
+      <table id="employeesTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>FullName</th><th>BirthDate</th><th>HealthClass</th>
+            <th>Role</th><th>Equipment</th><th>PatrolHistory</th><th>Warnings</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <h2>Объекты</h2>
+      <table id="objectsTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>ObjName</th><th>Lat</th><th>Lng</th>
+            <th>Criticality</th><th>IncidentHistory</th><th>Rating</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <h2>Расходы</h2>
+      <table id="expensesTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Date</th><th>Item</th>
+            <th>Quantity</th><th>Cost</th><th>AssignedTo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Подключение скриптов -->
+  <script src="/eel.js"></script>  <!-- Eel для связи Python<->JS -->
+  <script src="https://unpkg.com/@popperjs/core@2"></script>  <!-- Библиотека Popper (для тултипов) -->
+  <script src="https://unpkg.com/tippy.js@6"></script>       <!-- Библиотека Tippy.js -->
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script> <!-- Globe.gl для 3D-глобуса -->
+  <script src="script.js"></script>  <!-- Наш основной клиентский скрипт -->
+</body>
+</html>
