@@ -66,7 +66,7 @@ Frontend — HTML/JS в папке `web/`, реализующий:
 4. Модель Vosk не включена в репозиторий. Необходимо скачать её напрямую и добавить по схеме выше:
 
    ```
-   https://github.com/HellDiver830/non-departmental-security-organization/raw/main/vosk-model-small-ru-0.4.zip
+   https://github.com/HellDiver830/non-departmental-security-organization/raw/main/vosk-model-small-ru-0.4.zip](https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
    ```
 5. Задать API‑ключ для Gemini вместо хардкода в `main.py`:
 
